@@ -10,6 +10,7 @@ namespace MovieAssessmentAPI.Models
 {
     public class MovieSearch
     {
+        [StringLength(maximumLength:60)]
         public string? Name { get; set; }
         public int Year { get; set; }
         public double minRating { get; set; } = 0;
@@ -18,23 +19,40 @@ namespace MovieAssessmentAPI.Models
         public decimal maxTicketPrice { get; set; } = 15;
         public string[]? Country { get; set; }
         public string[]? Genre { get; set; }
-        public BsonDocument GetSearchQuery() {
+        public FilterDefinition<Movie> GetSearchQuery() {
             var builder = Builders<Movie>.Filter;
+            var filter = builder.Empty;
 
-            var filter = Builders<Movie>.Filter.And(new FilterDefinition<Movie>[] {
-                Builders<Movie>.Filter.Gte(x => x.Rating, minRating),
-                Builders<Movie>.Filter.Lte(x => x.Rating, maxRating),
-                Builders<Movie>.Filter.Gte(x => x.TicketPrice, minTicketPrice),
-                Builders<Movie>.Filter.Lte(x => x.TicketPrice, maxTicketPrice)
-            });
-
-
-            if(!String.IsNullOrWhiteSpace(Name)) {
-                return Builders<Movie>.Filter.Text(Name , new TextSearchOptions {CaseSensitive = false, DiacriticSensitive = false})
-                .ToBsonDocument();
+            if (minRating > 0)
+            {
+                filter = filter & builder.Gte(movie => movie.Rating, minRating);
+            }
+            if (maxRating > 0)
+            {
+                filter = filter & builder.Lte(movie => movie.Rating, maxRating);
             }
 
-            return filter.ToBsonDocument();
+            if (minTicketPrice > 0)
+            {
+                filter = filter & builder.Gte(movie => movie.TicketPrice, minTicketPrice);
+            }
+            if (maxTicketPrice < 15)
+            {
+                filter = filter & builder.Lte(movie => movie.TicketPrice, maxTicketPrice);
+            }
+
+            if (!String.IsNullOrWhiteSpace(Name))
+            {
+                filter = filter & builder.Text(Name, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false });
+            }
+
+            if (Year > 0)
+            {
+                filter = filter & builder.Gte(movie => movie.ReleaseDate, new DateTime(Year, 1, 1, 0, 0, 0));
+                filter = filter & builder.Lt(movie => movie.ReleaseDate, new DateTime(Year+1, 1, 1, 0, 0, 0));
+            }
+
+            return filter;
         }
     }
 }

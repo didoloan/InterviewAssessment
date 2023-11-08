@@ -46,38 +46,7 @@ namespace MovieAssessmentAPI.Services
 
         public async Task<List<Movie>> SearchMovie(MovieSearch search)
         {
-            var builder = Builders<Movie>.Filter;
-            var filter = builder.Empty;
-
-            if (search.minRating > 0)
-            {
-                filter = filter & builder.Gte(movie => movie.Rating, search.minRating);
-            }
-            if (search.maxRating > 0)
-            {
-                filter = filter & builder.Lte(movie => movie.Rating, search.maxRating);
-            }
-
-            if (search.minTicketPrice > 0)
-            {
-                filter = filter & builder.Gte(movie => movie.TicketPrice, search.minTicketPrice);
-            }
-            if (search.maxTicketPrice < 15)
-            {
-                filter = filter & builder.Lte(movie => movie.TicketPrice, search.maxTicketPrice);
-            }
-
-            if (!String.IsNullOrWhiteSpace(search.Name))
-            {
-                filter = filter & builder.Text(search.Name, new TextSearchOptions { CaseSensitive = false, DiacriticSensitive = false });
-            }
-
-            if (search.Year > 0)
-            {
-                filter = filter & builder.Eq(movie => movie.ReleaseDate.Year, search.Year);
-            }
-
-            var movies = await movieCollection.Find<Movie>(filter).ToListAsync();
+            var movies = await movieCollection.Find<Movie>(search.GetSearchQuery()).ToListAsync();
             return movies;
         }
 
